@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 import getpass
 import os
 from dotenv import load_dotenv
@@ -61,7 +62,7 @@ agent = create_structured_chat_agent(
 agent_executor = AgentExecutor.from_agent_and_tools(
    agent=agent,
    tools=tools,
-   verbose=True,
+#    verbose=True,
    memory=memory,
    handle_parsing_errors=True
 )
@@ -71,6 +72,17 @@ memory.chat_memory.add_messages({'type':'system','content':initial_message})
 
 # Initialize FastAPI app
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
+
+
+
 
 # Define request model
 class ChatRequest(BaseModel):
@@ -86,7 +98,8 @@ async def chat(chat_request: ChatRequest):
 
     response = agent_executor.invoke({"input": user_input})
     # print(response)
-    print("AI: ", response["output"])
+    # print("AI: ", response["output"])
+    print("memory: ", memory)
 
     memory.chat_memory.add_messages({'type': 'ai', 'content': response["output"]})
     return {"response": response["output"]}
